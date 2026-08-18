@@ -3,3 +3,5 @@ rich>=13.7.0
 prompt_toolkit>=3.0.43
 python-dotenv>=1.0.0
 streamlit>=1.35.0
+firebase-admin>=6.0.0
+pyrebase4>=4.6.0
