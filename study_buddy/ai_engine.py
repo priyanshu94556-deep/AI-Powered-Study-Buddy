@@ -1,95 +1,135 @@
 """
-AI Engine — wraps Google Gemini (google-genai SDK) and exposes a single ask() helper.
+AI Engine — wraps NVIDIA NIM API and exposes a single ask() helper.
 """
 
 import os
 import re
-from google import genai
+
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Model configuration ───────────────────────────────────────────────────────
-# Change this one constant to switch models across the entire app.
-# "gemini-flash-latest" is Google's stable alias for the current recommended
-# Flash model — verified working against this API key on 2025-05-30.
-MODEL = "models/gemini-flash-latest"
+MODEL = "openai/gpt-oss-20b"
+BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 
-def _get_client() -> genai.Client:
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key or api_key == "your_gemini_api_key_here":
+def _get_client() -> OpenAI:
+    api_key = os.getenv("NVIDIA_API_KEY")
+
+    if not api_key or api_key == "your_nvidia_api_key_here":
         raise EnvironmentError(
-            "GEMINI_API_KEY is not set.\n"
-            "1. Copy .env.example to .env\n"
-            "2. Replace 'your_gemini_api_key_here' with your real key\n"
-            "   → https://aistudio.google.com/app/apikey"
+            "NVIDIA_API_KEY is not set.\n"
+            "1. Add NVIDIA_API_KEY to your .env file.\n"
+            "2. Restart the Streamlit app."
         )
-    return genai.Client(api_key=api_key)
+
+    return OpenAI(
+        base_url=BASE_URL,
+        api_key=api_key,
+    )
 
 
 def friendly_error(exc: Exception) -> str:
     """
-    Convert a raw API/SDK exception into a short, user-readable message.
-    Never exposes raw JSON dicts or stack details to the caller.
-
-    Used by all four features (Explain, Summarize, Quiz, Flashcards) via app.py.
-    To change any user-facing error message, edit only this function.
+    Convert a raw API/SDK exception into a short,
+    user-readable message.
     """
+
     msg = str(exc)
     code = None
 
-    # Extract numeric HTTP status code if present (e.g. "429 RESOURCE_EXHAUSTED")
-    m = re.search(r'\b(\d{3})\b', msg)
+    m = re.search(r"\b(\d{3})\b", msg)
     if m:
         code = int(m.group(1))
 
-    if code == 429 or "RESOURCE_EXHAUSTED" in msg:
+    if (
+        code == 429
+        or "RESOURCE_EXHAUSTED" in msg
+        or "rate limit" in msg.lower()
+        or "rate_limit" in msg.lower()
+    ):
         return "Daily AI usage limit has been reached. Please try again later."
 
-    if code == 503 or "UNAVAILABLE" in msg or "Service Unavailable" in msg:
+    if (
+        code == 503
+        or "UNAVAILABLE" in msg
+        or "Service Unavailable" in msg
+        or "temporarily unavailable" in msg.lower()
+    ):
         return "The AI service is temporarily busy. Please try again."
-    if code == 401 or "API_KEY_INVALID" in msg or "invalid" in msg.lower() and "key" in msg.lower():
+
+    if (
+        code == 401
+        or "API_KEY_INVALID" in msg
+        or "unauthorized" in msg.lower()
+        or ("invalid" in msg.lower() and "key" in msg.lower())
+    ):
         return (
-            "Your Gemini API key appears to be invalid. "
-            "Please check your .env file and restart the app."
+            "Your NVIDIA API key appears to be invalid. "
+            "Please check your NVIDIA API key configuration."
         )
-    if code == 404 or "NOT_FOUND" in msg:
+
+    if code == 404 or "not found" in msg.lower():
         return (
             "The requested AI model was not found. "
             "Please contact the app administrator."
         )
+
     if "empty response" in msg.lower() or "no content" in msg.lower():
         return (
             "The AI returned an empty response. "
             "Try rephrasing your input and clicking again."
         )
-    if isinstance(exc, EnvironmentError):
-        return str(exc)   # already a clean human message
 
-    # Generic fallback — never show raw dicts
-    # Strip anything that looks like a JSON blob (starts with {)
-    clean = re.sub(r'\{.*', '', msg, flags=re.DOTALL).strip(" .'\"")
+    if isinstance(exc, EnvironmentError):
+        return str(exc)
+
+    clean = re.sub(r"\{.*", "", msg, flags=re.DOTALL).strip(" .'\"")
+
     return clean if clean else "An unexpected error occurred. Please try again."
 
 
 def ask(prompt: str) -> str:
-    """Send a prompt to Gemini and return the text response."""
+    """
+    Send a prompt to NVIDIA NIM and return the final text response.
+    """
+
     client = _get_client()
-    response = client.models.generate_content(
+
+    response = client.chat.completions.create(
         model=MODEL,
-        contents=prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        temperature=0.2,
+
+        # GPT-OSS-20B is a reasoning model.
+        # Keep reasoning low so enough tokens remain
+        # for the actual visible answer.
+        reasoning_effort="low",
+
+        # More room for reasoning + final answer.
+        max_tokens=4096,
     )
-    text = getattr(response, "text", None)
+
+    message = response.choices[0].message
+
+    # Normal final answer
+    text = getattr(message, "content", None)
+
+    # Some NVIDIA/OpenAI-compatible responses may expose
+    # useful text through reasoning_content.
     if not text:
-        # Dig into candidates in case .text is None (e.g. safety filter, empty part)
-        try:
-            text = response.candidates[0].content.parts[0].text
-        except (IndexError, AttributeError):
-            text = None
+        text = getattr(message, "reasoning_content", None)
+
     if not text:
         raise ValueError(
-            "Gemini returned an empty response. "
-            "The model may have blocked the request or returned no content."
+            "NVIDIA returned an empty response. "
+            "The model may have returned no visible content."
         )
+
     return text.strip()

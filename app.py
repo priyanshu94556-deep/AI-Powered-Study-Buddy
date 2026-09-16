@@ -588,18 +588,6 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-# ── API key guard ─────────────────────────────────────────────────────────────
-load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY", "")
-if not api_key or api_key == "your_gemini_api_key_here":
-    st.error(
-        "**GEMINI_API_KEY not configured.**\n\n"
-        "1. Copy `.env.example` → `.env`\n"
-        "2. Paste your key: `GEMINI_API_KEY=AIza...`\n"
-        "3. Get a free key at https://aistudio.google.com/app/apikey"
-    )
-    st.stop()
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Helpers
@@ -1510,7 +1498,7 @@ elif _page == "ℹ️ About":
         <div class="content-card">
           <h4 style="margin-top:0; color:#1e1b4b;">🎓 What is AI Study Buddy?</h4>
           <p>AI Study Buddy is a personal AI-powered learning assistant built for students.
-          It leverages Google Gemini Flash to help you understand any topic, condense your notes,
+          It uses NVIDIA NIM to help you understand any topic, condense your notes,
           test your knowledge, and revise using flashcards — all from a single, easy-to-use interface.</p>
         </div>
         """,
@@ -1545,7 +1533,7 @@ elif _page == "ℹ️ About":
               <p style="line-height:2.2;">
                 <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">Python 3.14</span>
                 <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">Streamlit</span>
-                <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">Google Gemini Flash</span>
+                <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">NVIDIA NIM</span>
                 <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">Firebase Auth</span>
                 <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">Firestore</span>
                 <span style="background:#ede9fe; color:#4c1d95; border-radius:20px; padding:2px 10px; font-size:0.8rem; font-weight:600; margin:2px;">pyrebase4</span>
@@ -1559,7 +1547,7 @@ elif _page == "ℹ️ About":
     st.markdown(
         "<div style='text-align:center; color:#6b7280; font-size:0.83rem; margin-top:24px; "
         "padding-top:16px; border-top:1px solid #e5e7eb;'>"
-        "Built with ❤️ using <strong>Streamlit</strong> &amp; <strong>Google Gemini AI</strong>"
+        "Built with ❤️ using <strong>Streamlit</strong> &amp; <strong>NVIDIA NIM AI</strong>"
         "</div>",
         unsafe_allow_html=True,
     )
