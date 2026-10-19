@@ -704,12 +704,12 @@ if _page == "🏠 Dashboard":
     else:
         st.markdown(
             "<div class='dash-hero'>"
-            "<div class='dash-hero-eyebrow'>✨ Your AI-Powered Study Companion</div>"
+            "<div class='dash-hero-eyebrow'> Your AI-Powered Study Companion</div>"
             "<div class='dash-hero-title'>🎓 AI-Powered Study Buddy</div>"
             "<div class='dash-hero-sub'>Your Personal AI Learning Assistant</div>"
             "<div class='dash-hero-tagline' style='margin-top:10px; font-size:0.93rem;"
             " color:rgba(255,255,255,0.85) !important;'>"
-            "🚀 Use all AI features as a <strong style='color:#fff;'>guest</strong> — "
+            " Use all AI features as a <strong style='color:#fff;'>guest</strong> — "
             "or <strong style='color:#fff;'>Login / Sign Up</strong> to save your progress."
             "</div>"
             "</div>",
